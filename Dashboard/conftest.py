@@ -1,12 +1,12 @@
 import os
-
 import pytest
 from selenium import webdriver
-import time
-from selenium.webdriver.chrome.service import Service as ChromeService
-from selenium.webdriver.chrome.service import Service as FirefoxService
+from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
-from selenium.common.exceptions import WebDriverException
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 # Path to the newly downloaded chromedriver and passed it in the object
@@ -21,20 +21,16 @@ def pytest_addoption(parser):
 
 
 # set up iff it will run using a different browser
-@pytest.fixture(scope="class")
+@pytest.fixture()
 def setting_browser(request):
     browser_name = request.config.getoption("browser_name")
 
     if browser_name == "chrome":
         print(os.path.abspath(os.path.join(os.path.dirname(__file__), "../chromedriver/123-0-6312-122.exe")))
-        service_obj = Service(
-            os.path.abspath(os.path.join(os.path.dirname(__file__), "../chromedriver/123-0-6312-122.exe")))
-        driver = webdriver.Chrome(service=service_obj)
+        driver = webdriver.Chrome()
     elif browser_name == "firefox":
         print(os.path.abspath(os.path.join(os.path.dirname(__file__), "../geckodriver.exe")))
-        service_obj = Service(
-            os.path.abspath(os.path.join(os.path.dirname(__file__), "../geckodriver.exe")))
-        driver = webdriver.Firefox(service=service_obj)
+        driver = webdriver.Firefox()
     else:
         raise ValueError(f"Unsupported browser: {browser_name}")
 
@@ -42,21 +38,74 @@ def setting_browser(request):
     driver.get("https://dev-dashboard.n-compass.online/")
     driver.implicitly_wait(5)
     driver.maximize_window()
+    request.cls.driver = driver
 
-    yield
+    yield driver
 
     # Closing the browser after running the test
     driver.close()
 
 
 @pytest.fixture()
-def Admin_Login(request):
-    pass
+def Admin_Login(request, setting_browser):
+    user = {'username': 'nicolev@n-compass.biz', 'password': 'qwerty123'}
+    driver = setting_browser
+    wait_driver = WebDriverWait(driver, 30)
+
+    username_field = wait_driver.until(
+        EC.visibility_of_element_located((By.XPATH, "//input[@ng-reflect-name='username']")))
+    username_field.send_keys(user['username'])
+
+    locator = (By.XPATH, "//input[@ng-reflect-name='password']")
+    password_field = wait_driver.until(EC.visibility_of_element_located(locator))
+    password_field.send_keys(user['password'])
+
+    locator = (By.XPATH, "//button[contains(@class, 'mat-raised-button')]/span[contains(text(), 'LOGIN')]")
+    login_button = wait_driver.until(EC.element_to_be_clickable(locator))
+
+    login_button.click()
+
+    try:
+        locator = (By.XPATH, "//div[contains(@style, 'justify-content: flex-end')]//button[text()='Close']")
+        onLoginClose_button = wait_driver.until(EC.element_to_be_clickable(locator))
+
+        onLoginClose_button.click()
+
+    except Exception as e:
+        print(e)
+
+    yield driver
 
 
 @pytest.fixture()
-def DealerAdmin_Login(request):
-    pass
+def DealerAdmin_Login(request, setting_browser):
+    user = {'username': 'ricos-dealer-admin@n-compass.biz', 'password': 'qwerty123'}
+    driver = setting_browser
+    wait_driver = WebDriverWait(driver, 30)
+
+    username_field = wait_driver.until(
+        EC.visibility_of_element_located((By.XPATH, "//input[@ng-reflect-name='username']")))
+    username_field.send_keys(user['username'])
+
+    locator = (By.XPATH, "//input[@ng-reflect-name='password']")
+    password_field = wait_driver.until(EC.visibility_of_element_located(locator))
+    password_field.send_keys(user['password'])
+
+    locator = (By.XPATH, "//button[contains(@class, 'mat-raised-button')]/span[contains(text(), 'LOGIN')]")
+    login_button = wait_driver.until(EC.element_to_be_clickable(locator))
+
+    login_button.click()
+
+    try:
+        locator = (By.XPATH, "//div[contains(@style, 'justify-content: flex-end')]//button[text()='Close']")
+        onLoginClose_button = wait_driver.until(EC.element_to_be_clickable(locator))
+
+        onLoginClose_button.click()
+
+    except Exception as e:
+        print(e)
+
+    yield driver
 
 
 @pytest.fixture()
